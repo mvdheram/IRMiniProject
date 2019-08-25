@@ -1,11 +1,3 @@
-import java.io.*;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.aksw.qa.commons.datastructure.IQuestion;
 import org.aksw.qa.commons.load.Dataset;
 import org.aksw.qa.commons.load.LoaderController;
@@ -15,38 +7,41 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.StopFilter;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
-import org.apache.lucene.analysis.en.PorterStemFilter;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.Version;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.index.query.QueryBuilders.*;
-import org.elasticsearch.common.settings.Setting;
-import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.TransportAddress;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.rest.RestStatus;
-import org.tartarus.snowball.ext.PorterStemmer;
 
-import static org.elasticsearch.common.xcontent.XContentFactory.*;
-
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+import java.io.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class search {
     String tsv = "C:/Users/Meher/Desktop/IR/wiki.tsv";
+
+    public static void main(String args[])
+    {
+        search search = new search();
+        List<IQuestion> questions = LoaderController.load(Dataset.QALD7_Train_Multilingual);
+        try {
+            search.index();
+            search.measure(questions);
+        }
+        catch (Exception e)
+        {
+            System.out.println("ElasticException:" + e);
+        }
+
+
+    }
     public static String preprocessing(String text) throws Exception
     {
             CharArraySet stopWords = EnglishAnalyzer.getDefaultStopSet();
@@ -116,9 +111,9 @@ public class search {
 
     }
 
-   public static Set<String> Query(String text, String answerType )
+   public static Set<String> Query(String text, String answerType)
    {
-       Set<String> systemAnswers=new HashSet();
+       Set<String> systemAnswers = new HashSet();
        return null;
 
    }
@@ -132,21 +127,6 @@ public class search {
         }
 
 
-
     }
-    public static void main(String args[])
-    {
-        search search = new search();
-        List<IQuestion> questions = LoaderController.load(Dataset.QALD7_Train_Multilingual);
-        try {
-            search.index();
-            search.measure(questions);
-        }
-        catch (Exception e)
-        {
-            System.out.println("ElasticException:" + e);
-        }
 
-
-    }
 }
