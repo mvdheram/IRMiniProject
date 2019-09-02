@@ -1,3 +1,7 @@
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.http.HttpHost;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CharArraySet;
@@ -18,7 +22,6 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
@@ -27,7 +30,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class search {
-    String tsv = "C:/Users/Meher/Desktop/IR/wiki.tsv";
+    static String tsv = "E:\\Misc\\IRMini\\enwiki-20171103-pages.tsv";
     public static RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(new HttpHost("localhost", 9200, "http")));
     public String url="garbage value";
     public String text="garbage value";
@@ -36,11 +39,10 @@ public class search {
     public static void main(String args[])
     {
         search search = new search();
-       // List<IQuestion> questions = LoaderController.load(Dataset.QALD7_Train_Multilingual);
+        //List<IQuestion> questions = LoaderController.load(Dataset.QALD7_Train_Multilingual);
         try {
-            search.index();
-            search.Query(preprocessing("When was the Battle of Gettysburg?"),"date");
-
+            //search.index();
+            search.Query("When was the Battle of Gettysburg?","date");
             //search.measure(questions);
 
         }
@@ -118,26 +120,64 @@ public class search {
    public Set<String> Query(String searchText, String answerType) throws java.io.IOException
    {
        Set<String> systemAnswers = new HashSet();
-       SearchRequest searchRequest = new SearchRequest();
+       SearchRequest searchRequest = new SearchRequest("wiki");
        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
        QueryBuilder matchQuery = QueryBuilders.matchQuery("text",searchText);
        searchSourceBuilder.query(matchQuery);
        searchRequest.source(searchSourceBuilder);
 
        SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+       System.out.println("search Responce  for the"+searchText+"is"+ searchResponse.toString());
+
+       JsonElement jsonElement = new JsonParser().parse(searchResponse.toString());
+       JsonObject jsonObject = jsonElement.getAsJsonObject();
+       jsonObject = jsonObject.getAsJsonObject("hits");
+       JsonArray hits_array = jsonObject.getAsJsonArray("hits");
+       if(hits_array.size()==0)
+       {
+           if(answerType.equals("boolean"))
+               systemAnswers.add("false");
+           else
+               systemAnswers.add("no result");
+       }
+       for(int i=0;i<hits_array.size();i++)
+       {
+           jsonObject = hits_array.get(i).getAsJsonObject();
+           jsonObject= jsonObject.getAsJsonObject("_source");
+           if(jsonObject.get("url").toString()!=null)
+           {
+               url=jsonObject.get("url").toString();
+               url=url.replace("/wiki", "/resource");
+               url=url.replace("enwikipedia.org", "dbpedia.org");
+               url = url.replace("\"", "");
+               if(answerType.equals("boolean"))
+               {
+                   systemAnswers.add("true");
+               }
+               else if(!answerType.equals("boolean"))
+               {
+                   systemAnswers.add(url);
+               }
+           }
+           if(jsonObject.get("url").toString()==null)
+           {
+               systemAnswers.add("no result");
+           }
+
+       }
+
+       System.out.println(systemAnswers);
 
        SearchHits hits = searchResponse.getHits();
 
        System.out.println("Found " + hits.getTotalHits() + " hits.");
 
-       SearchHit[] searchHits = hits.getHits();
-       for (SearchHit hit : searchHits) {
-           String sourceAsString = hit.getSourceAsString();
-           float score = hit.getScore();
-           System.out.println("result of search"+sourceAsString);
-           System.out.println("score"+score);
-       }
-
+//       SearchHit[] searchHits = hits.getHits();
+//       for (SearchHit hit : searchHits) {
+//           String sourceAsString = hit.getSourceAsString();
+//           float score = hit.getScore();
+//           System.out.println("score"+score);
+//       }
 
        return systemAnswers;
 
